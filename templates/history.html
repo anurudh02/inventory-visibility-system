@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% set active_page = "history" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}Movement Audit Trail{% endblock %}
+{% block page_title %}Movement Audit Trail{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header(
+        "Operational Movement Log",
+        "Material issue and receipt events with running balance to support shop-floor reconciliation and audit traceability."
+    ) }}
+
+    <section class="ops-panel">
+    <form method="GET" class="filter-bar">
+        <label>From <input type="date" name="date_from" value="{{ filters.date_from }}"></label>
+        <label>To <input type="date" name="date_to" value="{{ filters.date_to }}"></label>
+        <label>Event
+            <select name="action">
+                <option value="">All</option>
+                <option value="ISSUED" {% if filters.action == 'ISSUED' %}selected{% endif %}>Material issued</option>
+                <option value="RECEIVED" {% if filters.action == 'RECEIVED' %}selected{% endif %}>Replenishment received</option>
+                <option value="APPROVED" {% if filters.action == 'APPROVED' %}selected{% endif %}>Procurement approved</option>
+            </select>
+        </label>
+        <label>Material
+            <input type="text" name="material" list="materials" value="{{ filters.material }}" placeholder="Search material">
+            <datalist id="materials">
+                {% for name in material_names %}<option value="{{ name }}">{% endfor %}
+            </datalist>
+        </label>
+        <button type="submit" class="submit-btn">Apply filters</button>
+        <a href="{{ url_for('history') }}" class="edit-btn">Reset</a>
+    </form>
+
+    <div class="table-wrapper table-scroll">
+        <table class="enterprise-table">
+            <thead>
+                <tr>
+                    <th>Material</th>
+                    <th>Event</th>
+                    <th>Qty</th>
+                    <th>Stock before</th>
+                    <th>Stock after</th>
+                    <th>Recorded by</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                <tr>
+                    <td><strong>{{ row.item }}</strong></td>
+                    <td>
+                        {% if row.action == 'RECEIVED' %}<span class="badge badge-safe">Replenishment received</span>
+                        {% elif row.action == 'ISSUED' %}<span class="badge badge-critical">Material issued</span>
+                        {% elif row.action == 'APPROVED' %}<span class="badge badge-info">Procurement approved</span>
+                        {% else %}<span class="badge badge-warning">{{ row.action }}</span>{% endif %}
+                    </td>
+                    <td>{{ row.quantity }}</td>
+                    <td>{{ row.stock_before if row.stock_before is not none else '-' }}</td>
+                    <td>{{ row.stock_after if row.stock_after is not none else '-' }}</td>
+                    <td>{{ row.user }}</td>
+                    <td>{{ row.time }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7">No movement events match the selected filters.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    </section>
+</div>
+{% endblock %}

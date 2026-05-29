@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% set active_page = "impact" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+{% from "includes/kpi_card.html" import kpi_card %}
+
+{% block title %}Business Impact Analysis{% endblock %}
+{% block page_title %}Business Impact Analysis{% endblock %}
+
+{% block head %}
+<style>
+    .impact-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+    .impact-panel {
+        padding: 24px;
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border: 1px solid #e2e8f0;
+    }
+    .panel-before {
+        border-top: 4px solid #ef4444;
+    }
+    .panel-after {
+        border-top: 4px solid #10b981;
+    }
+    .impact-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .impact-list li {
+        margin-bottom: 16px;
+        padding-left: 28px;
+        position: relative;
+        font-size: 13.5px;
+        line-height: 1.5;
+    }
+    .panel-before .impact-list li::before {
+        content: "\f00d";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        color: #ef4444;
+        position: absolute;
+        left: 0;
+        top: 2px;
+    }
+    .panel-after .impact-list li::before {
+        content: "\f00c";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        color: #10b981;
+        position: absolute;
+        left: 0;
+        top: 2px;
+    }
+    .why-matters-panel {
+        background: #f8fafc;
+        border-left: 4px solid #1e3a8a;
+        padding: 20px 24px;
+        border-radius: 0 8px 8px 0;
+        margin-top: 24px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+
+    {{ ops_page_header(
+        "Business Impact Analysis",
+        "Quantifiable improvements in procurement efficiency, stockout risk reduction, and material prioritization."
+    ) }}
+
+    <section class="ops-panel" style="margin-bottom: 24px;">
+        <h2 class="ops-panel-title">Operational Value Metrics</h2>
+        <p style="font-size: 13px; color: var(--ops-muted); margin-bottom: 20px;">
+            A key performance review showing audited workflow achievements and data logs during the April–May 2026 operations window.
+        </p>
+        <div class="kpi-grid-pro" style="grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            {{ kpi_card("Workflow Efficiency", "95.2%", "Requests approved or finalized with low lag", "kpi-safe", "fa-bolt") }}
+            {{ kpi_card("Procurement Requests Processed", "46", "Total formal procurement transactions", "kpi-neutral", "fa-clipboard-list") }}
+            {{ kpi_card("Automated Alerts Generated", "30", "ROP breach warning notifications", "kpi-critical", "fa-bell") }}
+            {{ kpi_card("Transactions Logged", "143", "Real-time issues and receipts tracked", "kpi-neutral", "fa-right-left") }}
+            {{ kpi_card("Critical Items Detected", "28", "Materials flagged below reorder point", "kpi-critical", "fa-triangle-exclamation") }}
+            {{ kpi_card("Consumption Value Tracked", "Rs. 32,23,116", "Total raw material value in formulation", "kpi-info", "fa-indian-rupee-sign") }}
+        </div>
+    </section>
+
+    <div class="impact-grid-2">
+        <article class="impact-panel panel-before">
+            <h2 style="font-size: 16px; font-weight: 700; color: #ef4444; margin-bottom: 18px;"><i class="fa fa-circle-xmark"></i> Before System Implementation</h2>
+            <ul class="impact-list">
+                <li><strong>Inventory tracking:</strong> Manual Excel, no real-time updates</li>
+                <li><strong>Reorder detection:</strong> 3–7 days manual review</li>
+                <li><strong>Procurement approval:</strong> 2–4 days via WhatsApp and email</li>
+                <li><strong>Monthly reconciliation:</strong> 4–6 hours manual count</li>
+                <li><strong>Stockout visibility:</strong> None — found only when production stops</li>
+                <li><strong>Data accuracy:</strong> ~75% estimated, no audit trail</li>
+                <li><strong>ABC classification:</strong> Not done, all items treated equally</li>
+            </ul>
+        </article>
+
+        <article class="impact-panel panel-after">
+            <h2 style="font-size: 16px; font-weight: 700; color: #10b981; margin-bottom: 18px;"><i class="fa fa-circle-check"></i> After System Implementation</h2>
+            <ul class="impact-list">
+                <li><strong>Inventory tracking:</strong> Real-time, 143 transactions logged</li>
+                <li><strong>Reorder detection:</strong> Instant, 30 automated alerts fired</li>
+                <li><strong>Procurement approval:</strong> Same-day, 95.2% efficiency</li>
+                <li><strong>Monthly reconciliation:</strong> Eliminated, real-time updates</li>
+                <li><strong>Stockout visibility:</strong> Continuous, 28 items flagged</li>
+                <li><strong>Data accuracy:</strong> 100% audit trail maintained</li>
+                <li><strong>ABC classification:</strong> 5 Class A items = 63.3% of Rs.32L</li>
+            </ul>
+        </article>
+    </div>
+
+    <section class="ops-panel">
+        <h2 class="ops-panel-title">Why This Matters</h2>
+        <div class="why-matters-panel">
+            <p style="font-size: 14px; line-height: 1.6; color: #1e293b; margin: 0; font-weight: 500;">
+                "Without this system, materials worth Rs. 32 lakhs in annual consumption were being tracked on spreadsheets with no reorder alerts, no approval governance, and no ABC prioritization. Pigment Blue 15 alone — with Rs. 9.7 lakh in consumption value — had only 33 units remaining against a reorder point of 100, representing an immediate production risk that the previous manual system would have detected days later."
+            </p>
+        </div>
+    </section>
+
+</div>
+{% endblock %}

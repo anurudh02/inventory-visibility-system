@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% set active_page = "request" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}Replenishment Request{% endblock %}
+{% block page_title %}Replenishment Request{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header(
+        "Replenishment Request",
+        "Raise a replenishment request for procurement review. Use this when stock exposure is visible but a procurement action is not yet in the queue."
+    ) }}
+
+<section class="ops-panel">
+
+    {% if success and message %}
+        <div class="healthy-alert" style="margin-bottom:18px;">
+            {{ message }}
+        </div>
+    {% endif %}
+
+    <form method="POST" class="form-grid">
+        <div class="form-group">
+            <label for="item_name">Material</label>
+            <input type="text" id="item_name" name="item_name" required placeholder="Enter material name (as per inventory register)">
+        </div>
+
+        <div class="form-group">
+            <label for="quantity">Requested quantity</label>
+            <input type="number" id="quantity" name="quantity" required min="1" placeholder="Enter quantity to replenish">
+        </div>
+
+        <div class="form-group">
+            <label for="priority">Priority Level</label>
+            <select id="priority" name="priority">
+                <option value="Normal">Normal</option>
+                <option value="Urgent">Urgent</option>
+                <option value="Low">Low</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="requestor_name">Requester Name</label>
+            <input type="text" id="requestor_name" name="requestor_name" value="{{ current_user.full_name }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="requestor_email">Requester Email</label>
+            <input type="email" id="requestor_email" name="requestor_email" value="{{ current_user.email }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="remarks">Operational Remarks</label>
+            <textarea id="remarks" name="remarks" rows="4" placeholder="Example: Required for next production batch; supplier lead time confirmation pending"></textarea>
+        </div>
+
+        <div class="form-group">
+            <button type="submit" class="submit-btn">
+                <i class="fa fa-paper-plane"></i>
+                Submit for procurement review
+            </button>
+        </div>
+    </form>
+</section>
+</div>
+{% endblock %}

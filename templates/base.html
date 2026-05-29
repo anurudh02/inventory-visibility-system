@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Operations Workspace{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=9">
+    <link rel="stylesheet" href="{{ url_for('static', filename='ops-pro.css') }}?v=14">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+
+<body class="ops-body">
+
+<aside class="sidebar sidebar-minimal">
+    <div class="sidebar-header sidebar-header-minimal">
+        <div class="sidebar-brand">
+            <span class="sidebar-brand-icon"><i class="fa fa-industry"></i></span>
+            <div>
+                <span class="sidebar-label">Operations</span>
+                <span class="sidebar-sublabel">Inventory control</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="user-profile user-profile-compact">
+        <div class="user-info">
+            <div class="user-name">{{ current_user.full_name }}</div>
+            <div class="user-role">{{ current_user.role | title }}</div>
+        </div>
+    </div>
+
+    <nav class="sidebar-menu">
+        <a href="{{ url_for('index') }}" class="{% if active_page == 'dashboard' %}active{% endif %}">
+            <i class="fa fa-table-columns"></i><span>Overview</span>
+        </a>
+        <a href="{{ url_for('inventory') }}" class="{% if active_page == 'inventory' %}active{% endif %}">
+            <i class="fa fa-box"></i><span>Inventory</span>
+        </a>
+        <a href="{{ url_for('abc_analysis') }}" class="{% if active_page == 'abc' %}active{% endif %}">
+            <i class="fa fa-chart-pie"></i><span>ABC Analysis</span>
+        </a>
+        <a href="{{ url_for('xyz_analysis') }}" class="{% if active_page == 'xyz' %}active{% endif %}">
+            <i class="fa fa-arrows-rotate"></i><span>Movement</span>
+        </a>
+        <a href="{{ url_for('index') }}#forecasting">
+            <i class="fa fa-chart-line"></i><span>Forecasting</span>
+        </a>
+        {% if current_user.role in ['procurement', 'admin'] %}
+        <a href="{{ url_for('approvals') }}" class="{% if active_page == 'approvals' %}active{% endif %}">
+            <i class="fa fa-clipboard-check"></i><span>Procurement</span>
+            {% if nav_pending_approvals %}<span class="nav-badge">{{ nav_pending_approvals }}</span>{% endif %}
+        </a>
+        {% endif %}
+        <a href="{{ url_for('alerts_log') }}" class="{% if active_page == 'alerts' %}active{% endif %}">
+            <i class="fa fa-bell"></i><span>Alerts</span>
+        </a>
+        <a href="{{ url_for('reports') }}" class="{% if active_page == 'reports' %}active{% endif %}">
+            <i class="fa fa-file-lines"></i><span>Reports</span>
+        </a>
+        {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('adoption_metrics') }}" class="{% if active_page == 'adoption' %}active{% endif %}">
+            <i class="fa fa-chart-simple"></i><span>Usage</span>
+        </a>
+        {% endif %}
+        <a href="{{ url_for('business_impact') }}" class="{% if active_page == 'impact' %}active{% endif %}">
+            <i class="fa fa-circle-info"></i><span>System Capabilities</span>
+        </a>
+        {% if current_user.role in ['warehouse', 'admin'] %}
+        <a href="{{ url_for('issue') }}"><i class="fa fa-arrow-up"></i><span>Issue Stock</span></a>
+        <a href="{{ url_for('receive') }}"><i class="fa fa-arrow-down"></i><span>Receive Stock</span></a>
+        {% endif %}
+        <a href="{{ url_for('history') }}" class="{% if active_page == 'history' %}active{% endif %}"><i class="fa fa-clock-rotate-left"></i><span>History</span></a>
+        {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('manage_users') }}" class="{% if active_page == 'users' %}active{% endif %}"><i class="fa fa-users"></i><span>Users</span></a>
+        {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fa fa-right-from-bracket"></i><span>Logout</span></a>
+    </div>
+</aside>
+
+<main class="main main-ops">
+    <header class="topnav topnav-pro">
+        <div>
+            <div class="breadcrumb">{% block breadcrumb %}Operations{% endblock %}</div>
+            <div class="page-title">{% block page_title %}{% endblock %}</div>
+        </div>
+        <div class="user-pill">
+            <i class="fa fa-circle-dot"></i>
+            <span>Live operations workspace</span>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-stack">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</main>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

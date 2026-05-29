@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% set active_page = "adoption" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+{% from "includes/kpi_card.html" import kpi_card %}
+
+{% block title %}Adoption Metrics{% endblock %}
+{% block page_title %}Adoption Metrics{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header(
+        "Adoption & Usage Monitoring",
+        "User access, screen usage, and session behavior across the inventory workspace."
+    ) }}
+
+    <div class="kpi-grid-pro">
+        {{ kpi_card("Active Users", total_users, "Users recorded in telemetry", "kpi-info", "fa-users") }}
+        {{ kpi_card("Logins", total_logins, "Application launches through login", "kpi-safe", "fa-right-to-bracket") }}
+        {{ kpi_card("Screen Views", total_page_views, "Pages opened inside the app", "kpi-neutral", "fa-display") }}
+        {{ kpi_card("Avg. Session", avg_session_length ~ "s", completed_sessions ~ " completed sessions", "kpi-warning", "fa-clock") }}
+    </div>
+
+    <section class="ops-chart-grid">
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>Flow consistency</span>
+                <h2>Daily Active Users</h2>
+                <p>Distinct users accessing the system each day.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="dailyUsersChart"></canvas>
+            </div>
+        </article>
+
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>System utilization</span>
+                <h2>Screen Views by Day</h2>
+                <p>Navigation intensity across operational screens.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="pageViewsChart"></canvas>
+            </div>
+        </article>
+
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>Cycle time</span>
+                <h2>Average Session Length</h2>
+                <p>Estimated duration from completed login/logout sessions.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="sessionLengthChart"></canvas>
+            </div>
+        </article>
+
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>Platform mix</span>
+                <h2>Device Platform Mix</h2>
+                <p>Device families used to access the workspace.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="platformChart"></canvas>
+            </div>
+        </article>
+
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>Screen usage</span>
+                <h2>Most Used Screens</h2>
+                <p>Workflows opened most often by users.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="routeChart"></canvas>
+            </div>
+        </article>
+
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>Session duration</span>
+                <h2>Session Count by Duration</h2>
+                <p>Completed sessions grouped into practical usage windows.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="durationBucketChart"></canvas>
+            </div>
+        </article>
+    </section>
+
+    <section class="ops-panel">
+        <div class="table-section-header">
+            <div>
+                <h2>Recent telemetry events</h2>
+                <p>Latest user activity captured by the inventory system.</p>
+            </div>
+            <span class="table-count-pill">{{ recent_events|length }} rows</span>
+        </div>
+        <div class="table-wrapper table-scroll">
+            <table class="enterprise-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>User</th>
+                        <th>Event</th>
+                        <th>Screen</th>
+                        <th>Platform</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in recent_events %}
+                    <tr>
+                        <td>{{ event.timestamp }}</td>
+                        <td><strong>{{ event.username }}</strong></td>
+                        <td><span class="badge badge-overstock">{{ event.event_type }}</span></td>
+                        <td>{{ event.endpoint or "-" }}</td>
+                        <td>{{ event.device_platform or "-" }}</td>
+                        <td>{% if event.duration_seconds is not none %}{{ "%.1f"|format(event.duration_seconds) }}s{% else %}-{% endif %}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">No telemetry recorded yet. Log out and back in, then navigate the app to populate metrics.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+Chart.defaults.font.family = 'Inter, system-ui, -apple-system, sans-serif';
+Chart.defaults.color = '#475569';
+
+const labels = {{ daily_labels | tojson }};
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            position: 'bottom',
+            labels: { boxWidth: 9, boxHeight: 9, usePointStyle: true, padding: 14 }
+        }
+    },
+    scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: '#e8edf3' } }
+    }
+};
+
+new Chart(document.getElementById('dailyUsersChart'), {
+    type: 'line',
+    data: {
+        labels,
+        datasets: [{
+            label: 'Daily Active Users',
+            data: {{ active_users_data | tojson }},
+            borderColor: '#1d4ed8',
+            backgroundColor: 'rgba(29, 78, 216, .12)',
+            pointRadius: 3,
+            tension: .35,
+            fill: true
+        }]
+    },
+    options: chartOptions
+});
+
+new Chart(document.getElementById('pageViewsChart'), {
+    type: 'bar',
+    data: {
+        labels,
+        datasets: [{
+            label: 'Screen Views',
+            data: {{ page_views_data | tojson }},
+            backgroundColor: '#64748b',
+            borderRadius: 5
+        }]
+    },
+    options: chartOptions
+});
+
+new Chart(document.getElementById('sessionLengthChart'), {
+    type: 'line',
+    data: {
+        labels,
+        datasets: [{
+            label: 'Average Session Length (seconds)',
+            data: {{ avg_session_data | tojson }},
+            borderColor: '#0891b2',
+            backgroundColor: 'rgba(8, 145, 178, .12)',
+            pointRadius: 3,
+            tension: .35,
+            fill: true
+        }]
+    },
+    options: chartOptions
+});
+
+new Chart(document.getElementById('platformChart'), {
+    type: 'doughnut',
+    data: {
+        labels: {{ platform_labels | tojson }},
+        datasets: [{
+            data: {{ platform_data | tojson }},
+            backgroundColor: ['#1d4ed8', '#64748b', '#94a3b8', '#0891b2', '#d97706'],
+            borderColor: '#ffffff',
+            borderWidth: 2
+        }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '58%', plugins: chartOptions.plugins }
+});
+
+new Chart(document.getElementById('routeChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ route_labels | tojson }},
+        datasets: [{
+            label: 'Screen Views',
+            data: {{ route_data | tojson }},
+            backgroundColor: '#1f2937',
+            borderRadius: 5
+        }]
+    },
+    options: { ...chartOptions, indexAxis: 'y' }
+});
+
+new Chart(document.getElementById('durationBucketChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ session_bucket_labels | tojson }},
+        datasets: [{
+            label: 'Sessions',
+            data: {{ session_bucket_data | tojson }},
+            backgroundColor: ['#1d4ed8', '#64748b', '#d97706'],
+            borderRadius: 5
+        }]
+    },
+    options: chartOptions
+});
+</script>
+{% endblock %}

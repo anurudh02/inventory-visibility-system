@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% set active_page = "inventory" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}Inventory Monitoring{% endblock %}
+{% block page_title %}Inventory Monitoring{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header(
+        "Inventory Monitoring",
+        "Operational view of on-hand stock, reorder thresholds, and movement signals by material."
+    ) }}
+
+    <section class="ops-panel inventory-register-panel">
+        <div class="table-section-header">
+            <div>
+                <h2>Active Materials Registry</h2>
+                <p>{{ data|length }} materials monitored in the system.</p>
+            </div>
+            <span class="table-count-pill">{{ data|length }} rows</span>
+        </div>
+        <div class="table-wrapper table-readable table-scroll-limited inventory-full-table">
+            <table class="enterprise-table">
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>ABC</th>
+                        <th>Movement</th>
+                        <th>Stock</th>
+                        <th>Issued</th>
+                        <th>Received</th>
+                        <th>ROP</th>
+                        <th>Days of Cover</th>
+                        <th>Risk Status</th>
+                        <th>Procurement Priority</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in data %}
+                    <tr>
+                        <td><strong>{{ item.item }}</strong></td>
+                        <td><span class="badge badge-abc badge-abc-{{ item.abc | lower }}">{{ item.abc }}</span></td>
+                        <td><span class="movement-pill movement-{{ item.movement|lower|replace(' ', '-') }}">{{ item.movement }}</span></td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.quantity_taken }}</td>
+                        <td>{{ item.quantity_received }}</td>
+                        <td>{{ item.rop }}</td>
+                        <td>{{ item.days_remaining }}</td>
+                        <td>
+                            {% if item.status == "CRITICAL" %}
+                            <span class="badge badge-critical">Critical</span>
+                            {% elif item.status == "WARNING" %}
+                            <span class="badge badge-warning">Warning</span>
+                            {% elif item.status == "OVERSTOCK" %}
+                            <span class="badge badge-overstock">Overstock</span>
+                            {% else %}
+                            <span class="badge badge-safe">Safe</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.status == "CRITICAL" and item.abc == "A" %}
+                                <span class="badge badge-critical">Immediate</span>
+                            {% elif item.status == "CRITICAL" %}
+                                <span class="badge badge-warning">High</span>
+                            {% elif item.status == "WARNING" %}
+                                <span class="badge badge-warning">Review</span>
+                            {% else %}
+                                <span class="badge badge-safe">Routine</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if current_user.role in ['procurement', 'admin'] %}
+                            <a href="{{ url_for('edit_item', item_name=item.item) }}" class="edit-btn" style="color: var(--ops-accent); font-weight: 600;">Edit</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

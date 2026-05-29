@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% set active_page = "users" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}Add User{% endblock %}
+{% block page_title %}Add User{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header("Add New User", "Create a user account and assign the correct operational role.") }}
+
+    <section class="ops-panel form-panel-pro">
+        <div class="table-section-header">
+            <div>
+                <h2>User details</h2>
+                <p>Role assignments control what each user can view or approve.</p>
+            </div>
+        </div>
+
+        <form method="POST" class="form-grid">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input id="username" type="text" name="username" placeholder="Example: warehouse_01" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input id="email" type="email" name="email" placeholder="user@company.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input id="full_name" type="text" name="full_name" placeholder="Full name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" minlength="6" placeholder="Minimum 6 characters" required>
+            </div>
+
+            <div class="form-group">
+                <label for="role">Role</label>
+                <select id="role" name="role" required>
+                    <option value="warehouse">Warehouse</option>
+                    <option value="procurement">Procurement</option>
+                    <option value="management">Management</option>
+                    <option value="admin">Administrator</option>
+                </select>
+            </div>
+
+            <div class="form-group form-actions">
+                <button type="submit" class="submit-btn"><i class="fas fa-check"></i> Create User</button>
+                <a href="{{ url_for('manage_users') }}" class="edit-btn">Cancel</a>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

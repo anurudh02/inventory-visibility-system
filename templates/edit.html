@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% set active_page = "inventory" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}Edit Inventory Parameters{% endblock %}
+{% block page_title %}Edit Inventory Parameters{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header("Edit Inventory Parameters", "Update lead time, safety stock, and unit cost for planning calculations.") }}
+
+    <section class="ops-panel form-panel-pro">
+        <div class="table-section-header">
+            <div>
+                <h2>{{ item["item_name"] }}</h2>
+                <p>Planning parameters used for reorder and replenishment calculations.</p>
+            </div>
+        </div>
+
+        <form method="POST" class="form-grid">
+            <div class="form-group">
+                <label for="lead_time">Lead Time</label>
+                <input id="lead_time" type="number" name="lead_time" min="1" value="{{ item['lead_time'] }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="safety_stock">Safety Stock</label>
+                <input id="safety_stock" type="number" name="safety_stock" min="0" value="{{ item['safety_stock'] }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="unit_cost">Unit Cost</label>
+                <input id="unit_cost" type="number" name="unit_cost" min="0" step="0.01" value="{{ item['unit_cost'] }}" required>
+            </div>
+
+            <div class="form-group form-actions">
+                <button type="submit" class="submit-btn">
+                    <i class="fa fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        </form>
+
+        {% if current_user.role == 'admin' and not is_archived %}
+        <form method="POST" action="{{ url_for('archive_inventory_item', item_name=item['item_name']) }}"
+              class="form-danger-zone"
+              onsubmit="return confirm('Archive this material? It will be hidden from active inventory lists.');">
+            <button type="submit" class="reject-btn">
+                <i class="fa fa-archive"></i>
+                Archive Material
+            </button>
+        </form>
+        {% elif is_archived %}
+        <p class="ops-empty-sm">This material is archived and hidden from active inventory.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

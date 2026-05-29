@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% set active_page = "reports" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+{{ ops_page_header("Operational Review Pack", "Management-ready summaries for inventory monitoring, exception review, and replenishment governance.") }}
+<div class="ops-toolbar">
+    <a href="{{ url_for('reports', view='daily') }}" class="ops-link">Daily Activity</a>
+    <a href="{{ url_for('reports', view='monthly') }}" class="ops-link">Monthly Consumption</a>
+    <a href="{{ url_for('reports', view='critical') }}" class="ops-link">Replenishment Risk</a>
+    <button type="button" class="ops-link ops-link-muted" onclick="window.print()">Print Report</button>
+</div>
+
+<section class="kpi-grid-pro" style="margin-bottom: 16px;">
+    <div class="kpi-card-pro kpi-neutral">
+        <div class="kpi-title">Materials Monitored</div>
+        <div class="kpi-value">{{ total_materials }}</div>
+    </div>
+    <div class="kpi-card-pro kpi-critical">
+        <div class="kpi-title">Operational Risk Items</div>
+        <div class="kpi-value">{{ operational_risks }}</div>
+    </div>
+    <div class="kpi-card-pro kpi-warning">
+        <div class="kpi-title">Pending Decisions</div>
+        <div class="kpi-value">{{ pending_count }}</div>
+    </div>
+    <div class="kpi-card-pro kpi-info">
+        <div class="kpi-title">Movement Events</div>
+        <div class="kpi-value">{{ transaction_count }}</div>
+    </div>
+</section>
+
+{% if report_view == 'daily' or report_view == 'hub' %}
+<section class="ops-panel printable-report" style="margin-bottom: 16px;">
+    <h2 class="ops-panel-title">Daily Movement Activity — {{ report_date }}</h2>
+    <div class="table-wrapper table-scroll">
+        <table class="enterprise-table">
+            <thead>
+                <tr><th>Material</th><th>Event</th><th>Qty</th><th>Recorded by</th><th>Timestamp</th></tr>
+            </thead>
+            <tbody>
+                {% for tx in daily_tx %}
+                <tr>
+                    <td>{{ tx.item_name }}</td>
+                    <td>
+                        {% if tx.action == 'ISSUED' %}Material issued
+                        {% elif tx.action == 'RECEIVED' %}Replenishment received
+                        {% elif tx.action == 'APPROVED' %}Procurement approved
+                        {% else %}{{ tx.action }}{% endif %}
+                    </td>
+                    <td>{{ tx.quantity }}</td>
+                    <td>{{ tx.user }}</td>
+                    <td>{{ tx.timestamp }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5">No movement events recorded in the selected day window.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+{% if report_view == 'monthly' or report_view == 'hub' %}
+<section class="ops-panel printable-report" style="margin-bottom: 16px;">
+    <h2 class="ops-panel-title">Monthly Consumption Summary — {{ report_month }}</h2>
+    <div class="table-wrapper table-scroll">
+        <table class="enterprise-table">
+            <thead>
+                <tr><th>Material</th><th>Total Issued (qty)</th></tr>
+            </thead>
+            <tbody>
+                {% for row in monthly_rows %}
+                <tr>
+                    <td>{{ row.item_name }}</td>
+                    <td>{{ row.total_issued }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="2">No issue transactions recorded for the selected month.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+{% if report_view == 'critical' or report_view == 'hub' %}
+<section class="ops-panel printable-report" style="margin-bottom: 16px;">
+    <h2 class="ops-panel-title">Replenishment Risk Summary</h2>
+    <div class="table-wrapper table-scroll">
+        <table class="enterprise-table">
+            <thead>
+                <tr><th>Material</th><th>Stock</th><th>ROP</th><th>Days of Cover (est.)</th><th>Risk Status</th></tr>
+            </thead>
+            <tbody>
+                {% for item in critical_stock %}
+                <tr>
+                    <td>{{ item.item }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.rop }}</td>
+                    <td>{{ item.days_remaining }}</td>
+                    <td><span class="badge badge-critical">Critical</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5">All materials are at or above reorder point.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<section class="ops-panel no-print">
+    <h2 class="ops-panel-title">Executive Export Pack</h2>
+    <p class="panel-desc" style="font-size: 13px; color: var(--ops-muted); margin-bottom: 12px;">Standard exports for operational review and reporting.</p>
+    <div class="report-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+        <a href="{{ url_for('export_inventory_excel') }}" class="ops-panel" style="display: block; text-decoration: none;"><i class="fa fa-file-excel" style="margin-right: 8px; color: #166534;"></i><strong>Inventory Visibility Register</strong><span style="display: block; font-size: 12px; color: var(--ops-muted); margin-top: 4px;">On-hand stock and replenishment posture</span></a>
+        <a href="{{ url_for('export_forecast_excel') }}" class="ops-panel" style="display: block; text-decoration: none;"><i class="fa fa-chart-line" style="margin-right: 8px; color: #1e3a8a;"></i><strong>Replenishment Summary</strong><span style="display: block; font-size: 12px; color: var(--ops-muted); margin-top: 4px;">Forecast and procurement recommendations</span></a>
+        <a href="{{ url_for('export_kpi_pdf') }}" class="ops-panel" style="display: block; text-decoration: none;"><i class="fa fa-file-pdf" style="margin-right: 8px; color: #991b1b;"></i><strong>Executive Summary Report</strong><span style="display: block; font-size: 12px; color: var(--ops-muted); margin-top: 4px;">Operational outcome indicators</span></a>
+    </div>
+</section>
+</div>
+{% endblock %}

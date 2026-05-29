@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% set active_page = "approvals" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}Procurement Workflow Monitoring{% endblock %}
+{% block page_title %}Procurement Workflow Monitoring{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header(
+        "Procurement Decision Queue",
+        "Visibility into replenishment requests triggered by operational stock signals. Designed to reduce email-based follow-ups and improve decision traceability."
+    ) }}
+
+    <section class="ops-panel">
+        <div class="table-wrapper table-scroll">
+            <table class="enterprise-table">
+                <thead>
+                    <tr>
+                        <th>Request</th>
+                        <th>Material</th>
+                        <th>Qty</th>
+                        <th>Trigger</th>
+                        <th>Priority</th>
+                        <th>Raised by</th>
+                        <th>Queue status</th>
+                        <th>Decision</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr>
+                        <td><strong>#{{ row["id"] }}</strong></td>
+                        <td><strong>{{ row["item_name"] }}</strong></td>
+                        <td>{{ row["quantity"] }}</td>
+                        <td>
+                            <span class="badge badge-neutral">{{ row["source"] or "Operational signal" }}</span>
+                            {% if row["remarks"] %}<div class="kpi-desc" style="margin-top:6px;">{{ row["remarks"] }}</div>{% endif %}
+                        </td>
+                        <td>{{ row["priority"] or "Normal" }}</td>
+                        <td>{{ row["requester_name"] or "—" }}</td>
+                        <td>
+                            {% if row["status"] == 'Pending' %}
+                            <span class="badge badge-warning">Pending review</span>
+                            {% elif row["status"] == 'Approved' %}
+                            <span class="badge badge-safe">Approved</span>
+                            {% else %}
+                            <span class="badge badge-critical">Returned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if row["status"] == 'Pending' %}
+                            <form method="POST" action="{{ url_for('approve', id=row['id']) }}" style="display:inline;">
+                                <button type="submit" class="approve-btn">Approve replenishment</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('reject', id=row['id']) }}" style="display:inline;">
+                                <button type="submit" class="reject-btn">Return for revision</button>
+                            </form>
+                            {% else %}
+                            <span class="badge badge-neutral">{{ row["decided_by"] or "—" }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

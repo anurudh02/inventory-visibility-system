@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+{% set active_page = "dashboard" %}
+{% from "includes/kpi_card.html" import kpi_card %}
+
+{% block title %}Inventory & Procurement Monitoring Dashboard{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+{% block page_title %}Inventory & Procurement Monitoring{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="ops-workspace ops-workspace-wide">
+
+    <header class="executive-dashboard-hero">
+        <div>
+            <span class="ops-insight-label"><i class="fa fa-industry"></i> Operations visibility dashboard</span>
+            <h1>Inventory & Procurement Monitoring Dashboard</h1>
+            <p>
+                Management view of inventory control, procurement tracking, stock movement,
+                low-stock identification, and operational reporting.
+            </p>
+        </div>
+        <div class="executive-hero-meta">
+            <span>Control focus</span>
+            <strong>Inventory and procurement review</strong>
+        </div>
+    </header>
+
+    <nav class="dashboard-section-nav">
+        <a href="#executive-overview">Executive Overview</a>
+        <a href="#inventory-monitoring">Inventory Monitoring</a>
+        <a href="#procurement-tracking">Procurement Tracking</a>
+        <a href="#movement-analysis">Stock Movement</a>
+        <a href="#low-stock-alerts">Low Stock Alerts</a>
+        <a href="#operational-benefits">Benefits</a>
+    </nav>
+
+    <section class="ops-panel" id="executive-overview">
+        <div class="section-title-row">
+            <div>
+                <h2>Executive Overview</h2>
+                <p>Current stock health, procurement queue, movement activity, and reorder exposure.</p>
+            </div>
+            <a href="{{ url_for('export_kpi_pdf') }}" class="ops-link ops-link-muted"><i class="fa fa-file-export"></i> Export summary</a>
+        </div>
+        <div class="kpi-grid-pro">
+            {{ kpi_card("Total Inventory Items", total, "Active materials under monitoring", "kpi-neutral", "fa-boxes-stacked") }}
+            {{ kpi_card("Critical Items", critical, "Materials currently below or at reorder point", "kpi-critical", "fa-triangle-exclamation") }}
+            {{ kpi_card("Pending Approvals", pending_count, "Procurement requests awaiting review", "kpi-warning", "fa-hourglass-half") }}
+            {{ kpi_card("Inventory Health", "{:.1f}%".format(inventory_health), "Percentage of materials above ROP", "kpi-critical" if health_color == "red" else "kpi-warning" if health_color == "orange" else "kpi-safe", "fa-shield-halved") }}
+            {{ kpi_card("Active Alerts", alert_log_count, "Total automated system alerts generated", "kpi-critical", "fa-bell") }}
+            {{ kpi_card("Total Transactions", transaction_count, "Logged stock issue and receipt events", "kpi-neutral", "fa-right-left") }}
+        </div>
+    </section>
+
+    <section class="ops-chart-grid">
+        <article class="ops-panel chart-panel-pro" id="inventory-monitoring">
+            <div class="chart-panel-head">
+                <span>Inventory Monitoring</span>
+                <h2>Stock Trend Analysis</h2>
+                <p>Top on-hand materials compared with reorder point for control visibility.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="stockTrendChart"></canvas>
+            </div>
+        </article>
+
+        <article class="ops-panel chart-panel-pro" id="procurement-tracking">
+            <div class="chart-panel-head">
+                <span>Procurement Tracking</span>
+                <h2>Procurement Status Distribution</h2>
+                <p>Approved, pending, and rejected replenishment requests in the workflow register.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="procurementStatusChart"></canvas>
+            </div>
+        </article>
+    </section>
+
+    <section class="ops-panel" id="low-stock-alerts">
+        <div class="section-title-row">
+            <div>
+                <h2>Low Stock Alerts</h2>
+                <p>Materials below reorder threshold or approaching replenishment review.</p>
+            </div>
+            <a href="{{ url_for('alerts_log') }}" class="ops-link">Alert log</a>
+        </div>
+        {% if critical_stock_detailed %}
+        <div class="table-wrapper table-scroll-limited">
+            <table class="enterprise-table">
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>Stock</th>
+                        <th>ROP</th>
+                        <th>Safety Stock</th>
+                        <th>Days Left</th>
+                        <th>Action Required</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in critical_stock_detailed %}
+                    <tr>
+                        <td><strong>{{ item.item }}</strong></td>
+                        <td>{{ item.stock }}</td>
+                        <td>{{ item.rop }}</td>
+                        <td>{{ item.safety_stock }}</td>
+                        <td>{{ item.days_remaining }}</td>
+                        <td>{{ item.recommendation }}</td>
+                        <td>
+                            {% if item.alert_level == 'CRITICAL' %}
+                            <span class="badge badge-critical">Critical</span>
+                            {% else %}
+                            <span class="badge badge-warning">Warning</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="ops-empty">No materials are below reorder threshold at present.</p>
+        {% endif %}
+    </section>
+
+    <section class="ops-chart-grid" id="movement-analysis">
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>Monthly Trends</span>
+                <h2>Monthly Consumption Trend</h2>
+                <p>Issued and received material quantities across operating records.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="monthlyTrendChart"></canvas>
+            </div>
+        </article>
+
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>Stock Movement Analysis</span>
+                <h2>Inventory Movement Timeline</h2>
+                <p>Comparison of material issue volume and replenishment receipt volume.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="movementTimelineChart"></canvas>
+            </div>
+        </article>
+    </section>
+
+    <section class="ops-chart-grid" id="material-category-analysis">
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>Material Category Analysis</span>
+                <h2>Category-wise Inventory</h2>
+                <p>ABC classification by number of monitored materials.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="categoryInventoryChart"></canvas>
+            </div>
+        </article>
+
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>Reorder Risk Analysis</span>
+                <h2>Stock vs Reorder Point</h2>
+                <p>Priority materials with the tightest stock position against reorder threshold.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="reorderRiskChart"></canvas>
+            </div>
+        </article>
+    </section>
+
+    <section class="ops-panel" id="operational-kpis">
+        <div class="section-title-row">
+            <div>
+                <h2>Operational KPIs</h2>
+                <p>Operational indicators for management review and reporting.</p>
+            </div>
+        </div>
+        <div class="kpi-grid-pro">
+            {% for kpi in pilot_kpis %}
+            {{ kpi_card(kpi.title, kpi.value, kpi.impact, kpi.variant, kpi.icon) }}
+            {% endfor %}
+        </div>
+        {% include "includes/pilot_metrics_note.html" %}
+    </section>
+
+    <section class="ops-chart-grid" id="warehouse-performance">
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>Warehouse / Department Performance</span>
+                <h2>Department-wise Usage</h2>
+                <p>Issued quantity by recorded user or operating role in transaction history.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="departmentUsageChart"></canvas>
+            </div>
+        </article>
+
+        <article class="ops-panel chart-panel-pro">
+            <div class="chart-panel-head">
+                <span>Procurement Monitoring</span>
+                <h2>Procurement Source Volume</h2>
+                <p>Request quantity grouped by available procurement request source.</p>
+            </div>
+            <div class="chart-card chart-wrap-lg">
+                <canvas id="sourceVolumeChart"></canvas>
+            </div>
+        </article>
+    </section>
+
+    <section class="ops-panel" id="operational-reporting">
+        <div class="section-title-row">
+            <div>
+                <h2>Operational Reporting</h2>
+                <p>Planning view for consumption, days of cover, and replenishment review.</p>
+            </div>
+            <a href="{{ url_for('reports') }}" class="ops-link">Open reports</a>
+        </div>
+        <div class="table-wrapper table-scroll-limited">
+            <table class="enterprise-table">
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>Avg Monthly Usage</th>
+                        <th>Days of Cover</th>
+                        <th>Suggested Replenishment</th>
+                        <th>Planning Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in forecasting_enriched %}
+                    <tr>
+                        <td><strong>{{ row.material }}</strong></td>
+                        <td>{{ row.avg_monthly_usage }}</td>
+                        <td>{{ row.days_remaining }}</td>
+                        <td>{% if row.suggested_replenishment > 0 %}{{ row.suggested_replenishment }}{% else %}-{% endif %}</td>
+                        <td>{{ row.procurement_suggestion }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="ops-panel" id="operational-benefits">
+        <div class="section-title-row">
+            <div>
+                <h2>Operational Benefits</h2>
+                <p>Business value communicated in practical operating terms.</p>
+            </div>
+        </div>
+        <div class="benefit-grid">
+            <article><i class="fa fa-table-columns"></i><strong>Centralized inventory monitoring</strong><span>One place to review material stock, status, and reorder exposure.</span></article>
+            <article><i class="fa fa-bell"></i><strong>Faster low-stock identification</strong><span>Critical and warning materials are visible without manual spreadsheet filtering.</span></article>
+            <article><i class="fa fa-file-excel"></i><strong>Reduced spreadsheet dependency</strong><span>Operational registers are structured for review, tracking, and reporting.</span></article>
+            <article><i class="fa fa-clipboard-check"></i><strong>Improved procurement visibility</strong><span>Pending, approved, and rejected requests are monitored through a central queue.</span></article>
+            <article><i class="fa fa-right-left"></i><strong>Better material tracking</strong><span>Issue and receipt activity supports stock movement transparency.</span></article>
+            <article><i class="fa fa-chart-simple"></i><strong>Structured operational reporting</strong><span>Monthly trends and KPI views support management and faculty review.</span></article>
+            <article><i class="fa fa-users-gear"></i><strong>Improved review workflow</strong><span>Warehouse, procurement, and management roles receive clearer visibility.</span></article>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+Chart.defaults.color = '#64748b';
+
+const chartPlugins = {
+    legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14 } }
+};
+const axisBase = {
+    x: { grid: { display: false }, ticks: { color: '#64748b' } },
+    y: { beginAtZero: true, grid: { color: '#e8edf3' }, ticks: { color: '#64748b' } }
+};
+const defaultOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: chartPlugins,
+    scales: axisBase
+};
+
+new Chart(document.getElementById('stockTrendChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ stock_trend_chart['labels'] | tojson }},
+        datasets: [
+            { label: 'On-hand stock', data: {{ stock_trend_chart['stock'] | tojson }}, backgroundColor: '#1d4ed8', borderRadius: 5 },
+            { label: 'Reorder point', data: {{ stock_trend_chart['rop'] | tojson }}, backgroundColor: '#94a3b8', borderRadius: 5 }
+        ]
+    },
+    options: { ...defaultOptions, scales: { ...axisBase, x: { ...axisBase.x, ticks: { maxRotation: 45, minRotation: 35 } } } }
+});
+
+new Chart(document.getElementById('procurementStatusChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Approved', 'Pending', 'Rejected'],
+        datasets: [{
+            data: [{{ approved_count }}, {{ pending_count }}, {{ rejected_count }}],
+            backgroundColor: ['#166534', '#d97706', '#991b1b'],
+            borderColor: '#ffffff',
+            borderWidth: 2
+        }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: chartPlugins }
+});
+
+new Chart(document.getElementById('monthlyTrendChart'), {
+    type: 'line',
+    data: {
+        labels: {{ monthly_consumption_trend.labels | tojson }},
+        datasets: [{
+            label: 'Issued quantity',
+            data: {{ monthly_consumption_trend.data | tojson }},
+            borderColor: '#1d4ed8',
+            backgroundColor: 'rgba(29, 78, 216, 0.12)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 3
+        }]
+    },
+    options: defaultOptions
+});
+
+new Chart(document.getElementById('movementTimelineChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ monthly_consumption_trend.labels | tojson }},
+        datasets: [
+            { label: 'Issued', data: {{ monthly_consumption_trend.data | tojson }}, backgroundColor: '#991b1b', borderRadius: 5 },
+            { label: 'Received', data: {{ procurement_trend.data | tojson }}, backgroundColor: '#166534', borderRadius: 5 }
+        ]
+    },
+    options: defaultOptions
+});
+
+new Chart(document.getElementById('categoryInventoryChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ category_inventory_chart['labels'] | tojson }},
+        datasets: [{
+            label: 'Materials',
+            data: {{ category_inventory_chart['counts'] | tojson }},
+            backgroundColor: ['#1d4ed8', '#64748b', '#94a3b8'],
+            borderRadius: 5
+        }]
+    },
+    options: { ...defaultOptions, plugins: { legend: { display: false } } }
+});
+
+new Chart(document.getElementById('reorderRiskChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ risk_labels | tojson }},
+        datasets: [
+            { label: 'On-hand stock', data: {{ risk_stock | tojson }}, backgroundColor: '#1d4ed8', borderRadius: 5 },
+            { label: 'Reorder point', data: {{ risk_rop | tojson }}, backgroundColor: '#d97706', borderRadius: 5 }
+        ]
+    },
+    options: defaultOptions
+});
+
+new Chart(document.getElementById('departmentUsageChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ department_usage_chart['labels'] | tojson }},
+        datasets: [{
+            label: 'Issued quantity',
+            data: {{ department_usage_chart['values'] | tojson }},
+            backgroundColor: '#0891b2',
+            borderRadius: 5
+        }]
+    },
+    options: { ...defaultOptions, indexAxis: 'y', plugins: { legend: { display: false } } }
+});
+
+new Chart(document.getElementById('sourceVolumeChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ procurement_source_chart['labels'] | tojson }},
+        datasets: [{
+            label: 'Requested quantity',
+            data: {{ procurement_source_chart['values'] | tojson }},
+            backgroundColor: '#64748b',
+            borderRadius: 5
+        }]
+    },
+    options: { ...defaultOptions, indexAxis: 'y', plugins: { legend: { display: false } } }
+});
+</script>
+{% endblock %}

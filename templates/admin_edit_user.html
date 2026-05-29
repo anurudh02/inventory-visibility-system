@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% set active_page = "users" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}Edit User{% endblock %}
+{% block page_title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header("Edit User", "Update access role, contact information, and account status for " ~ user.username ~ ".") }}
+
+    <section class="ops-panel form-panel-pro">
+        <div class="table-section-header">
+            <div>
+                <h2>{{ user.username }}</h2>
+                <p>Keep account access aligned with current operational responsibility.</p>
+            </div>
+        </div>
+
+        <form method="POST" class="form-grid">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" value="{{ user.username }}" disabled>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input id="email" type="email" name="email" value="{{ user.email }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input id="full_name" type="text" name="full_name" value="{{ user.full_name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="role">Role</label>
+                <select id="role" name="role" required>
+                    <option value="warehouse" {% if user.role == 'warehouse' %}selected{% endif %}>Warehouse</option>
+                    <option value="procurement" {% if user.role == 'procurement' %}selected{% endif %}>Procurement</option>
+                    <option value="management" {% if user.role == 'management' %}selected{% endif %}>Management</option>
+                    <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Administrator</option>
+                </select>
+            </div>
+
+            <div class="form-group checkbox-field">
+                <label for="is_active">Account Status</label>
+                <label class="check-row">
+                    <input type="checkbox" id="is_active" name="is_active" {% if user.is_active %}checked{% endif %}>
+                    Active user account
+                </label>
+            </div>
+
+            <div class="form-group form-actions">
+                <button type="submit" class="submit-btn"><i class="fas fa-save"></i> Save Changes</button>
+                <a href="{{ url_for('manage_users') }}" class="edit-btn">Cancel</a>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

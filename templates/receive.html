@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% set active_page = "receive" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}Receive Stock{% endblock %}
+{% block page_title %}Receive Stock{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header("Replenishment Receipt (Inbound)", "Record material received from supplier. Updates stock position and the audit trail for reconciliation.") }}
+
+    <section class="ops-panel">
+        <form method="POST" class="form-grid">
+            <div class="form-group">
+                <label for="item">Material</label>
+                <input id="item" type="text" name="item" required placeholder="Enter material name as per register">
+            </div>
+            <div class="form-group">
+                <label for="quantity">Received quantity</label>
+                <input id="quantity" type="number" name="quantity" min="1" required placeholder="Enter quantity received">
+            </div>
+            <div class="form-group">
+                <label for="cost">Unit cost (₹)</label>
+                <input id="cost" type="number" name="cost" min="0" step="0.01" required placeholder="e.g. 112.00">
+            </div>
+            <div class="form-group">
+                <label for="lead_time">Lead time (days)</label>
+                <input id="lead_time" type="number" name="lead_time" min="1" required placeholder="e.g. 10">
+            </div>
+            <div class="form-group">
+                <label for="safety_stock">Safety stock</label>
+                <input id="safety_stock" type="number" name="safety_stock" min="0" required placeholder="e.g. 25">
+            </div>
+            <div class="form-group">
+                <button type="submit" class="submit-btn btn-primary">Record receipt transaction</button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% set active_page = "abc" %}
+
+{% from "includes/ops_insight.html" import ops_page_header %}
+{% from "includes/kpi_card.html" import kpi_card %}
+
+{% block title %}ABC Inventory Analysis{% endblock %}
+{% block page_title %}ABC Inventory Analysis{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .ops-note {
+        margin-top: 12px;
+        padding: 10px 14px;
+        background-color: #f8fafc;
+        border-left: 3px solid var(--ops-accent);
+        font-size: 12.5px;
+        color: #475569;
+        border-radius: 0 4px 4px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+
+    {{ ops_page_header(
+        "ABC Inventory Analysis",
+        "Value-based prioritization for replenishment control and material review."
+    ) }}
+
+    <div class="kpi-grid-pro">
+        {{ kpi_card("Class A (High Value)", summary.A.count, summary.A.pct_value ~ "% of total value", "kpi-abc-a", "fa-layer-group") }}
+        {{ kpi_card("Class B (Medium Value)", summary.B.count, summary.B.pct_value ~ "% of total value", "kpi-abc-b", "fa-circle-half-stroke") }}
+        {{ kpi_card("Class C (Routine Value)", summary.C.count, summary.C.pct_value ~ "% of total value", "kpi-abc-c", "fa-circle") }}
+    </div>
+
+    <section class="ops-panel">
+        <h2 class="ops-panel-title">Pareto Analysis — Consumption Value</h2>
+        <p style="font-size: 12.5px; color: var(--ops-muted); margin-bottom: 12px;">Accumulated consumption value by material rank (80/20 prioritization).</p>
+        <div class="chart-wrap-lg"><canvas id="paretoChart"></canvas></div>
+    </section>
+
+    <div class="chart-grid-2">
+        <section class="ops-panel">
+            <h2 class="ops-panel-title">ABC Class Value Share</h2>
+            <div class="chart-card chart-wrap-centered">
+                <canvas id="abcClassChart"></canvas>
+            </div>
+        </section>
+
+        <section class="ops-panel">
+            <h2 class="ops-panel-title">Materials Per Class</h2>
+            <div class="chart-card chart-wrap-centered">
+                <canvas id="abcCountChart"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <section class="ops-panel">
+        <h2 class="ops-panel-title">ABC Operating Model</h2>
+        <div class="abc-policy-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            {% for row in category_rows %}
+            <article class="ops-panel" style="padding: 16px;">
+                <span class="badge" style="background-color: var(--ops-accent-soft); color: var(--ops-accent); font-weight: 700; margin-bottom: 8px; display: inline-block;">Class {{ row.class }}</span>
+                <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">{{ row.control }}</h3>
+                <div style="font-size: 12px; color: var(--ops-muted); margin-bottom: 8px;">
+                    <span>{{ row.count }} items ({{ row.pct_items }}% of total)</span>
+                </div>
+                <p style="font-size: 12.5px; line-height: 1.4; color: var(--ops-text);"><strong>{{ row.review }}:</strong> {{ row.action }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="ops-panel">
+        <div class="table-section-header">
+            <div>
+                <h2>Material Classification Registry</h2>
+                <p>Monitored materials sorted by total consumption value.</p>
+            </div>
+            <span class="table-count-pill">{{ abc_inventory_rows|length }} rows</span>
+        </div>
+        <div class="table-wrapper table-readable table-scroll-limited">
+            <table class="enterprise-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Material</th>
+                        <th>ABC</th>
+                        <th>Stock</th>
+                        <th>Consumed</th>
+                        <th>Unit Cost</th>
+                        <th>Consumption Value</th>
+                        <th>Value %</th>
+                        <th>Cumulative %</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in abc_inventory_rows %}
+                    <tr>
+                        <td>{{ item.rank }}</td>
+                        <td><strong>{{ item.item }}</strong></td>
+                        <td><span class="badge badge-abc badge-abc-{{ item.abc | lower }}">{{ item.abc }}</span></td>
+                        <td>{{ item.stock }}</td>
+                        <td>{{ item.issued }}</td>
+                        <td>{{ "%.2f"|format(item.unit_cost) }}</td>
+                        <td>{{ "{:,.0f}".format(item.consumption_value) }}</td>
+                        <td>{{ item.value_share }}%</td>
+                        <td>{{ item.cumulative_share }}%</td>
+                        <td>
+                            {% if item.status == "CRITICAL" %}
+                            <span class="badge badge-critical">Critical</span>
+                            {% elif item.status == "WARNING" %}
+                            <span class="badge badge-warning">Warning</span>
+                            {% elif item.status == "OVERSTOCK" %}
+                            <span class="badge badge-overstock">Overstock</span>
+                            {% else %}
+                            <span class="badge badge-safe">Safe</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="ops-panel">
+        <h2 class="ops-panel-title">Prioritization Guidelines</h2>
+        <div class="ops-note">
+            <strong>Monitoring Priority:</strong> Class A materials represent a significant share of value and require regular review. Class C materials can be managed on an exception basis.
+        </div>
+    </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+Chart.defaults.font.family = 'Inter, -apple-system, sans-serif';
+Chart.defaults.color = '#64748b';
+
+new Chart(document.getElementById('paretoChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ pareto_chart.labels | tojson }},
+        datasets: [
+            {
+                type: 'bar',
+                label: 'Consumption value (₹)',
+                data: {{ pareto_chart['values'] | tojson }},
+                backgroundColor: 'rgba(30, 58, 138, 0.85)',
+                borderColor: '#1e3a8a',
+                borderWidth: 1,
+                borderRadius: 2,
+                yAxisID: 'y'
+            },
+            {
+                type: 'line',
+                label: 'Cumulative %',
+                data: {{ pareto_chart.cumulative | tojson }},
+                borderColor: '#b91c1c',
+                backgroundColor: 'transparent',
+                tension: 0.1,
+                pointBackgroundColor: '#b91c1c',
+                pointHoverRadius: 4,
+                yAxisID: 'y1'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } },
+        scales: {
+            y: { beginAtZero: true, position: 'left' },
+            y1: { beginAtZero: true, max: 100, position: 'right', grid: { drawOnChartArea: false } },
+            x: { ticks: { maxRotation: 45, minRotation: 30 } }
+        }
+    }
+});
+
+new Chart(document.getElementById('abcClassChart'), {
+    type: 'doughnut',
+    data: {
+        labels: {{ chart_labels | tojson }},
+        datasets: [{
+            data: {{ chart_values | tojson }},
+            backgroundColor: ['#1d4ed8', '#64748b', '#94a3b8'],
+            borderWidth: 1,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: { legend: { position: 'bottom' } }
+    }
+});
+
+new Chart(document.getElementById('abcCountChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ chart_labels | tojson }},
+        datasets: [{
+            label: 'Material Count',
+            data: [{{ summary.A.count }}, {{ summary.B.count }}, {{ summary.C.count }}],
+            backgroundColor: ['rgba(29, 78, 216, 0.85)', 'rgba(100, 116, 139, 0.85)', 'rgba(148, 163, 184, 0.85)'],
+            borderColor: ['#1d4ed8', '#64748b', '#94a3b8'],
+            borderWidth: 1,
+            borderRadius: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+});
+</script>
+{% endblock %}

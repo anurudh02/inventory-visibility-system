@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    Inventory Management System
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <a href="/">Dashboard</a>
+    <a href="/inventory">Inventory</a>
+    <a href="/receive">Receive</a>
+    <a href="/issue">Issue</a>
+    <a href="/history">History</a>
+</div>
+
+<div class="container">
+
+    <a class="btn" href="/add">Add Stock</a>
+    <a class="btn" href="/issue">Issue Stock</a>
+    <a class="btn" href="/inventory">View Inventory</a>
+    <a class="btn" href="/history">Transaction History</a>
+
+</div>
+
+</body>
+</html>

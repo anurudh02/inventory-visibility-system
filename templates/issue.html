@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% set active_page = "issue" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}Issue Stock{% endblock %}
+{% block page_title %}Issue Stock{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header("Material Issue (Consumption)", "Record material issued to production. This updates stock visibility and supports replenishment signaling.") }}
+
+    <section class="ops-panel">
+        <form method="POST" class="form-grid">
+            <div class="form-group">
+                <label for="item">Material</label>
+                <select id="item" name="item" required>
+                    {% for i in items %}
+                    <option value="{{ i[0] }}">{{ i[0] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="quantity">Issue quantity</label>
+                <input id="quantity" type="number" name="quantity" min="1" required placeholder="Enter quantity issued">
+            </div>
+            <div class="form-group">
+                <button type="submit" class="submit-btn btn-primary">Record issue transaction</button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

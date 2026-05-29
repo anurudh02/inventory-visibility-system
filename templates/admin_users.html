@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% set active_page = "users" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}User Management{% endblock %}
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header("User Management", "Manage role-based access for warehouse, procurement, management, and administrator users.") }}
+
+    <div class="ops-toolbar">
+        <a href="{{ url_for('add_user') }}" class="ops-link ops-link-primary"><i class="fas fa-plus"></i> Add User</a>
+    </div>
+
+    <section class="ops-panel">
+        <div class="table-section-header">
+            <div>
+                <h2>System users</h2>
+                <p>Active accounts and role assignments for operational access control.</p>
+            </div>
+            <span class="table-count-pill">{{ users|length }} users</span>
+        </div>
+
+        <div class="table-wrapper table-scroll">
+            <table class="enterprise-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td><strong>{{ user.username }}</strong></td>
+                        <td>{{ user.full_name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td><span class="badge badge-overstock">{{ user.role | title }}</span></td>
+                        <td>
+                            {% if user.is_active %}
+                            <span class="badge badge-safe">Active</span>
+                            {% else %}
+                            <span class="badge badge-critical">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.created_at[:10] }}</td>
+                        <td>
+                            <div class="inline-actions">
+                                <a href="{{ url_for('edit_user', user_id=user.id) }}" class="edit-btn"><i class="fas fa-edit"></i> Edit</a>
+                                {% if user.id|string != current_user.id|string and user.is_active %}
+                                <form method="POST" action="{{ url_for('deactivate_user', user_id=user.id) }}" onsubmit="return confirm('Deactivate this user? They will no longer be able to sign in.');">
+                                    <button type="submit" class="reject-btn"><i class="fas fa-user-slash"></i> Deactivate</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

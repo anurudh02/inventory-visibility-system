@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% set active_page = "xyz" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+{% from "includes/kpi_card.html" import kpi_card %}
+
+{% block title %}Movement Classification{% endblock %}
+{% block page_title %}Movement Classification{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .ops-note {
+        margin-top: 12px;
+        padding: 10px 14px;
+        background-color: #f8fafc;
+        border-left: 3px solid var(--ops-accent);
+        font-size: 12.5px;
+        color: #475569;
+        border-radius: 0 4px 4px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header(
+        "Movement Classification",
+        "Movement grouping and issue/receipt trends for inventory monitoring."
+    ) }}
+
+    <div class="kpi-grid-pro">
+        {{ kpi_card("Fast Moving Items", fast_count, "Consumption rate > 1,500 units", "kpi-neutral", "fa-arrow-trend-up") }}
+        {{ kpi_card("Medium Moving Items", medium_count, "Consumption rate 400 - 1,500 units", "kpi-neutral", "fa-minus") }}
+        {{ kpi_card("Slow Moving Items", slow_count, "Consumption rate < 400 units", "kpi-neutral", "fa-arrow-trend-down") }}
+    </div>
+
+    <div class="chart-grid-2">
+        <section class="ops-panel">
+            <h2 class="ops-panel-title">Movement Class Distribution</h2>
+            <div class="chart-card chart-wrap-centered">
+                <canvas id="xyzChart"></canvas>
+            </div>
+        </section>
+        <section class="ops-panel">
+            <h2 class="ops-panel-title">Monthly Issue vs. Receipt</h2>
+            <div class="chart-card chart-wrap-centered">
+                <canvas id="xyzTrendChart"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <section class="ops-panel">
+        <div class="table-section-header">
+            <div>
+                <h2>Movement Classification Registry</h2>
+                <p>Materials grouped by movement velocity class.</p>
+            </div>
+            <span class="table-count-pill">{{ movement_rows|length }} rows</span>
+        </div>
+        <div class="table-wrapper table-readable table-scroll-limited">
+            <table class="enterprise-table">
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>Movement</th>
+                        <th>ABC</th>
+                        <th>Stock</th>
+                        <th>Consumed</th>
+                        <th>Received</th>
+                        <th>ROP</th>
+                        <th>Days of Cover</th>
+                        <th>Risk Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in movement_rows %}
+                    <tr>
+                        <td><strong>{{ item.item }}</strong></td>
+                        <td><span class="movement-pill movement-{{ item.movement|lower|replace(' ', '-') }}">{{ item.movement }}</span></td>
+                        <td><span class="badge badge-abc badge-abc-{{ item.abc | lower }}">{{ item.abc }}</span></td>
+                        <td>{{ item.stock }}</td>
+                        <td>{{ item.issued }}</td>
+                        <td>{{ item.received }}</td>
+                        <td>{{ item.rop }}</td>
+                        <td>{{ item.days_remaining }}</td>
+                        <td>
+                            {% if item.status == "CRITICAL" %}
+                            <span class="badge badge-critical">Critical</span>
+                            {% elif item.status == "WARNING" %}
+                            <span class="badge badge-warning">Warning</span>
+                            {% elif item.status == "OVERSTOCK" %}
+                            <span class="badge badge-overstock">Overstock</span>
+                            {% else %}
+                            <span class="badge badge-safe">Safe</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="ops-panel">
+        <h2 class="ops-panel-title">Movement Review Guidelines</h2>
+        <div class="ops-note">
+            <strong>Priority:</strong> Class A materials require closer monitoring. Slow moving items should be reviewed for holding-cost exposure.
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+Chart.defaults.font.family = 'Inter, -apple-system, sans-serif';
+Chart.defaults.color = '#64748b';
+
+const baseOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } } }
+};
+
+new Chart(document.getElementById('xyzChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ chart_labels | tojson }},
+        datasets: [{
+            label: 'Materials',
+            data: {{ chart_values | tojson }},
+            backgroundColor: ['#1e3a8a', '#64748b', '#94a3b8'],
+            borderRadius: 2,
+            barThickness: 24
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#edf2f7' } },
+            y: { grid: { display: false } }
+        }
+    }
+});
+
+// Grouped bar chart for XYZ trends
+new Chart(document.getElementById('xyzTrendChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ movement_trend.labels | tojson }},
+        datasets: [
+            {
+                label: 'Issued (consumption)',
+                data: {{ movement_trend.issued | tojson }},
+                backgroundColor: 'rgba(185, 28, 28, 0.85)',
+                borderColor: '#b91c1c',
+                borderWidth: 1,
+                borderRadius: 2
+            },
+            {
+                label: 'Received (replenishment)',
+                data: {{ movement_trend.received | tojson }},
+                backgroundColor: 'rgba(21, 128, 61, 0.85)',
+                borderColor: '#15803d',
+                borderWidth: 1,
+                borderRadius: 2
+            }
+        ]
+    },
+    options: {
+        ...baseOpts,
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+</script>
+{% endblock %}

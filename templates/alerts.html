@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% set active_page = "alerts" %}
+{% from "includes/ops_insight.html" import ops_page_header %}
+
+{% block title %}Alerts Log{% endblock %}
+{% block page_title %}Alerts Log{% endblock %}
+
+{% block content %}
+<div class="ops-workspace">
+    {{ ops_page_header("Operational Alert Log", "Exception alerts recorded during the active data period. Used for follow-up and inventory governance.") }}
+
+    <section class="ops-panel">
+        <div class="table-wrapper table-scroll">
+            <table class="enterprise-table">
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>Type</th>
+                        <th>By</th>
+                        <th>Time</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td><strong>{{ log.material_name }}</strong></td>
+                        <td>
+                            {% if log.alert_type == 'critical' or log.alert_type == 'Below threshold' %}<span class="badge badge-critical">Critical</span>
+                            {% elif log.alert_type == 'warning' or log.alert_type == 'Watchlist' %}<span class="badge badge-warning">Warning</span>
+                            {% elif log.alert_type == 'overstock' or log.alert_type == 'Excess holding' %}<span class="badge badge-overstock">Overstock</span>
+                            {% else %}<span class="badge badge-neutral">{{ log.alert_type }}</span>{% endif %}
+                        </td>
+                        <td>{{ log.triggered_by }}</td>
+                        <td>{{ log.timestamp }}</td>
+                        <td>{{ log.notes or "—" }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5">No exception alerts recorded in this window.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}
