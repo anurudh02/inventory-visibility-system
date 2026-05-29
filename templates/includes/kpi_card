@@ -1,0 +1,11 @@
+{% macro kpi_card(title, value, desc, variant='kpi-neutral', icon='fa-chart-simple') %}
+<article class="kpi-card-pro {{ variant }}">
+    <div class="kpi-card-pro-head">
+        <div class="kpi-icon-wrap"><i class="fa {{ icon }}"></i></div>
+    </div>
+    <div class="kpi-title">{{ title }}</div>
+    <div class="kpi-value">{{ value }}</div>
+    {% if desc %}<div class="kpi-desc">{{ desc }}</div>{% endif %}
+</article>
+{% endmacro %}
+
