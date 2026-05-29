@@ -1,1 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Intelligence &amp; Procurement System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}?v=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-page">
+    <div class="login-shell">
+        <aside class="login-hero">
+            <div class="login-hero-inner">
+                <div class="login-hero-badge"><i class="fa fa-industry"></i> Internal operations workspace</div>
+                <h1>Inventory Intelligence &amp; Procurement System</h1>
+                <p>Paint Manufacturing Operations</p>
+            </div>
+        </aside>
+
+        <main class="login-main">
+            <div class="login-panel">
+                <h2>Sign in</h2>
+                <p class="login-sub">Paint Manufacturing Operations</p>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" class="login-form" id="loginForm">
+                    <div class="field">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required autofocus placeholder="Enter username" autocomplete="username">
+                    </div>
+
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <div class="password-row">
+                            <input type="password" id="password" name="password" required placeholder="Enter password" autocomplete="current-password">
+                            <button type="button" class="pw-toggle" id="togglePassword" aria-label="Show password">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-signin">Sign in to workspace</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+    (function () {
+        const password = document.getElementById('password');
+        const toggle = document.getElementById('togglePassword');
+
+        toggle?.addEventListener('click', function (e) {
+            e.preventDefault();
+            const show = password.type === 'password';
+            password.type = show ? 'text' : 'password';
+            toggle.innerHTML = show ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
+        });
+    })();
+    </script>
+</body>
+</html>
 
