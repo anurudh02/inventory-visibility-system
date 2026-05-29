@@ -1807,9 +1807,35 @@ def abc_analysis():
     total_value = sum(item["consumption_value"] for item in table)
 
     summary = {}
+    category_guidance = {
+        "A": {
+            "control": "Tight control and frequent review",
+            "review": "Weekly review",
+            "action": "Prioritize replenishment decisions and verify demand signals before stockouts occur.",
+        },
+        "B": {
+            "control": "Balanced review cycle",
+            "review": "Bi-weekly review",
+            "action": "Track movement trends and replenish through standard approval thresholds.",
+        },
+        "C": {
+            "control": "Exception-based control",
+            "review": "Monthly review",
+            "action": "Use simpler ordering rules while monitoring unusual consumption spikes.",
+        },
+    }
+    category_rows = []
     for cls in ("A", "B", "C"):
         items = [i for i in table if i.get("abc") == cls]
         value = sum(i["consumption_value"] for i in items)
+        summary[cls] = {
+            "count": len(items),
+            "pct_items": round(len(items) / total_items * 100, 1) if total_items else 0,
+            "pct_value": round(value / total_value * 100, 1) if total_value else 0,
+            "value": round(value, 2),
+        }
+        category_rows.append({
+            "class": cls,
             "count": summary[cls]["count"],
             "pct_items": summary[cls]["pct_items"],
             "pct_value": summary[cls]["pct_value"],
