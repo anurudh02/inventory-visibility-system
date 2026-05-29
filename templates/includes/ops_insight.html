@@ -1,0 +1,15 @@
+{% macro ops_page_header(title, subtitle=None) %}
+<header class="ops-page-header">
+    <h1>{{ title }}</h1>
+    {% if subtitle %}<p>{{ subtitle }}</p>{% endif %}
+</header>
+{% endmacro %}
+
+{% macro ops_insight(focus, interpretation, conclusion) %}
+<div class="ops-insight-panel">
+    <div class="ops-insight-label"><i class="fa fa-lightbulb"></i> Operational insight</div>
+    <p><strong>Focus:</strong> {{ focus }}</p>
+    <p><strong>Interpretation:</strong> {{ interpretation }}</p>
+    <p><strong>Conclusion:</strong> {{ conclusion }}</p>
+</div>
+{% endmacro %}
